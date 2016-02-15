@@ -270,6 +270,7 @@ We next want to use the Monte Carlo approach to account for parameter uncertaint
 
 To begin, we need to specify the uncertainty in the model parameters and the size of the simulation
 ```{r}
+r <- 1
 r.sd = 0.2     ## standard deviation on r
 K.sd = 1.0     ## standard deviation on K
 NE = 1000      ## Ensemble size
