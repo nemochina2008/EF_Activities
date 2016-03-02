@@ -286,7 +286,7 @@ Data for this analysis is presented in JAGS list format below. Copy and paste th
 
 ```{r}
 
-#initial values for mu 
+## initial values for mu 
 inits <- list()
 inits[[1]] <- list(mu = 15)
 inits[[2]] <- list(mu = 20)
@@ -307,7 +307,7 @@ jags.out   <- coda.samples (model = j.model,
 plot(jags.out)
 
 ## additional samples
-jags.out2 <- coda.samples(j.model,variable.names = c("mu"),10000)
+jags.out2 <- coda.samples(j.model,variable.names = c("mu"),3000)
 plot(jags.out2)
 
 ## compares the among chain variance to the within change variance 
@@ -327,34 +327,51 @@ jags.burn <- window(jags.out,start=burnin)
 gelman.diag(jags.burn)
 plot(jags.burn)
 
+## simple autocorrelation plot
+acfplot(jags.burn)
 
-summary(jags.out)
-
+## determine number of independent samples (effective sample size)
 effectiveSize(jags.burn)
-cumuplot(jags.out,probs=c(0.025,0.25,0.5,0.75,0.975))
+
+## plot the evolution of sample quantiles as a funcion of number of iterations
+cumuplot(jags.burn,probs=c(0.025,0.25,0.5,0.75,0.975))
+
+## calculate summary of output 
+summary(jags.burn)
+
+
 ```
 
 Run the unknown mean/fixed variance model to estimate mean tree diameter. Include the following in your report:
 
 * Table of summary statistics for the posterior estimate of the mean
+
+The mean diameter is approximately 16, with standard deviation of ~ 0.3, and time-series SE of ~0.003. Both SD and SE are low indicating low uncertainty around the parameter mu and high numerical preceision of the results, respectively.  
+
 * Graph of parameter density and plot of MCMC “history”
 
-I know the model has converged because the chains have overlapping trajectories and bounce around at random, showing longer term trends. The trajectories of the chains are consistent over time and that their distribution looks appropriately normal.
+I know the model has converged because the chains have overlapping trajectories and bounce around at random, showing some longer term trends. The trajectories of the chains are consistent over time and their distribution looks appropriately normal.
 
 * Length of your MCMC (i.e. the total number of “updates”), the number of chains, the burnin values you used, the effective sample size, and any graphs/statistics/rationale you used to justify those settings
 
-I made one update including many more iterations (10,000 as opposed to 1,000), which improved the appearance of the trace and density plots. With fewer samples there was a trend in the trace plot and the normal distribution wasn't as tight as it is with more samples. However, the GBR for both is 1 showing that the model has converged. So I will perform the rest of the analysis on the smaller sample.  
+I made one update including many more iterations (10,000 as opposed to 1,000), which improved the appearance of the trace and density plots. With fewer samples there was a trend in the trace plot and the normal distribution wasn't as tight as it was with more samples. However, the GBR for both is approximately 1 showing that the model has converged. The effective sample size is approximately 3000 so the final analysis was performed with 3 chains with 1000 iterations. 
+I also tried working with 4 chains instead of 3 using the following initial values. It actually slightly increased the GBR value but didn't not change the summary statistics, which showed similar mean and timeseries standard errors. 
 
+```
+inits[[1]] <- list(mu = 15)
+inits[[2]] <- list(mu = 18)
+inits[[3]] <- list(mu = 21)
+inits[[4]] <- list(mu = 25)
+```
 
-
-
+The burnin happened within the first few iterations because the model converged almost immediately with identical chains corresponding to GBR values of 1. Convergence has happened when the output from all chains is indistinguishable 
+The effective sample size approximates the number of independent samples, which in this case is approximately 3000 samples for estmating the mean 
 
 
 ### Activity Task 2
 Modify the model to account for the uncertainty in the variance. This only requires adding one line — a prior on S outside the loop.
 
 ```{r}
-
 NormalMeanNS <- "
 model {
   mu ~ dnorm(mu0,T) # prior on the mean 
@@ -364,29 +381,38 @@ model {
   }
 }
 "
+
+## data for fiting model 
+
 data = list(N = 297, mu0=20, T=0.01, X = c(20.9, 13.6, 15.7, 6.3, 2.7, 25.6, 4, 20.9, 7.8, 27.1, 25.2, 19, 17.8, 22.8, 12.5, 21.1, 22, 22.4, 5.1, 16, 20.7, 15.7, 5.5, 18.9, 22.9, 15.5, 18.6, 19.3, 14.2, 12.3, 11.8, 26.8, 17, 5.7, 12, 19.8, 19, 23.6, 19.9, 8.4, 22, 18.1, 21.6, 17, 12.4, 2.9, 22.6, 20.8, 18.2, 14.2, 17.3, 14.5, 8.6, 9.1, 2.6, 19.8, 20, 22.2, 10.2, 12.9, 20.9, 21.1, 7.3, 5.8, 23.1, 17, 21.5, 10.1, 18.4, 22.6, 21.2, 21.5, 22.4, 17.3, 16, 25, 22.4, 23.9, 23, 21.9, 19, 28.6, 16, 22.5, 23.2, 8.7, 23.4, 15.3, 25.6, 19.2, 17.4, 23.8, 20.4, 19, 3.6, 23.4, 19.6, 17.5, 16.5, 22, 19.7, 7.35, 18, 17.8, 9.6, 15, 12, 17.7, 21.4, 17, 22.1, 18.9, 15.05, 12.9, 19.3, 15.3, 13.6, 15.4, 10.6, 11.3, 11.8, 22.2, 22.2, 13.1, 7.4, 4.5, 11.7, 19.5, 19.9, 11.6, 13.9, 15.5, 11, 18.6, 17.6, 12.7, 20.9, 18.8, 22.4, 21.2, 18.2, 15.3, 13.6, 7.3, 17.4, 17.4, 10.5, 22.9, 23.2, 13.8, 14.8, 22.2, 20.9, 13, 18.9, 19, 15.2, 16.8, 18, 24.6, 15.4, 17.2, 23.2, 22.8, 25.5, 7.8, 6, 6.4, 19, 13.5, 23.7, 18, 22.2, 22.4, 9.3, 13.7, 18.9, 20.5, 23.3, 20.8, 18.4, 4.5, 12.2, 16.9, 13.5, 17.8, 16.9, 20.4, 19.5, 22.2, 24.5, 21.2, 16.5, 18, 16.4, 3.9, 17.9, 22, 12.9, 21, 18, 9.2, 15.9, 8.1, 8.3, 10.7, 12, 19.9, 13.6, 17.3, 11.5, 12.4, 15.1, 22, 19.3, 17.5, 14.5, 14.7, 17.5, 19.6, 12.9, 20.3, 17.9, 20.2, 18.3, 9.5, 19, 21, 13.1, 20.4, 16.3, 18.3, 11.8, 23.3, 15.2, 20, 17.9, 12, 19.6, 18.5, 16.2, 10.9, 17.8, 13.8, 10, 17.9, 15.6, 20.3, 14.9, 18.6, 12.5, 18.2, 16, 18.7, 18, 15.3, 19, 17.9, 15.8, 17.7, 14.4, 19.6, 18.3, 18.7, 17.8, 18, 10.1, 18.8, 16.4, 21.2, 16.6, 16.7, 17.8, 16.5, 19.3, 16.3, 14.2, 13, 9.4, 19.7, 13.4, 2.6, 17.6, 16.7, 17.6, 5.8, 17.6, 20.1, 18.2, 16.7, 14, 13.9, 5.1, 16.6, 3.9, 17.5, 18))
 
+## set initial values for mu and S 
 inits <- list()
 inits[[1]] <- list(mu = 15, S=1/20)
 inits[[2]] <- list(mu = 20, S=1/25)
 inits[[3]] <- list(mu = 25, S=1/30)
 
+## call jags model to establish connection with jags, compile the model and run through
 j.model   <- jags.model (file = textConnection(NormalMeanNS),
                              data = data,
                              inits = inits,
                              n.chains = 3)
 
+## once the model is compiled then coda samples is called to sample from the posterior
 jags.out   <- coda.samples (model = j.model,
                             variable.names = c("mu", "S"),
-                                n.iter = 1000)
-
+                                n.iter = 3000)
+## visualize jags output 
 plot(jags.out)
+
+## compares the among chain variance to the within change variance 
 gelman.diag(jags.out)
 
+## determine when convergence happened is done both visually and by plotting the GBR statistic versus sample
 GBR <- gelman.plot(jags.out)
 
 ## determine the first iteration after convergence
-burnin <- GBR$last.iter[max(tail(which(GBR$shrink[,,2] > 1.1),1))+1]
+burnin <- GBR$last.iter[max(tail(which(GBR$shrink[,1,2] > 1.1),1))+1]
 ## check for no burn-in case
 if(length(burnin) == 0) burnin = 1
 ## remove burn-in
@@ -395,17 +421,43 @@ jags.burn <- window(jags.out,start=burnin)
 gelman.diag(jags.burn)
 plot(jags.burn)
 
-summary(jags.out)
+## simple autocorrelation plot
+acfplot(jags.burn)
+
+## determine number of independent samples (effective sample size)
+effectiveSize(jags.burn)
+
+## plot the evolution of sample quantiles as a funcion of number of iterations
+cumuplot(jags.burn,probs=c(0.025,0.25,0.5,0.75,0.975))
+
+## calculate summary of output 
+summary(jags.burn)
+
 ```
 
 Run the unknown mean/unknown variance model to simultaneously estimate both the mean tree diameter and the standard deviation. Include in your report the following:
 
 * Explaination of your choice of prior on the precision
+I selected a uniform prior for the precision because my precision cannot be negative and with a uniform function I can restrict the range of values that S can take from 0 to 100. Additionally, I am not sure if any S value is more likely than another and in an uniform distribution all values between 0 and 100 have equal probability. Unifrom distribution plays nicely with normal distribution, which was another consideration. Precision is a continuous varibale so the uniform distribution is a good fit in that sense as well. 
+
 * Table of summary statistics for the posterior mean and standard deviation
-* Graph of parameter densities
-* Plot of MCMC “history”
+Summary statistics show precision of ~0.03 as expected and mean of ~16 with low time-series SE. Both SD and SE are low indicating low uncertainty around the parameter mu and high numerical preceision of the results, respectively.
+
+* Graph of parameter densities and plot of MCMC “history”
+
+I know the model has converged because the chains have overlapping trajectories and bounce around at random, showing some longer term trends. The trajectories of the chains are consistent over time and their distribution looks appropriately normal.
+
 * Length of your MCMC (i.e. the total number of “updates”), the number of chains, burnin, effective sample size, and any graphs/statistics/rationale you used to justify those settings
+
+- I made one update including many more iterations (3,000 as opposed to 1,000), which improved the appearance of the trace and density plots. With fewer samples there was a trend in the trace plot and the normal distribution wasn't as tight as it was with more samples. The effective sample size is approximately 5,000 for S and 8,500 for mu so the final analysis was performed with 3 chains and 3,000 iterations which get us to an effective sample size. 
+
+- The burnin happened within the first few iterations because the model converged almost immediately with identical chains corresponding to GBR values of 1. Convergence has happened when the output from all chains is indistinguishable 
+
+- The effective sample size approximates the number of independent samples, which in this case is approximately 5,000 for S and 8,500 for mu
+
 * Also describe any changes in the distribution of the mean (shape, location, tails) compared to Task 1.
-  
+I set the burnin value to be determoned based on S since it seemed to have GBR values higher than 1.1 more often than mu. However, sometimes I get an error message. Ideally, I want to look at both columns simulataneously and set my burnin value according to when both mu and S are below 1.1. This would be done by using which.mac command. 
 
-
+Summary statistics between Task 1 and Task 2 seem to be very comparable (mu, s.d., SE and qauntiles) with the major exception that Task 2 includes S in addition to mu
+A visual comparsion shows similar shapes and tails. However, the density of mu in Task 2 is slightly less thight with a slight bulge at the top right. 
+Location is very similar
