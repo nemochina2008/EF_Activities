@@ -283,32 +283,39 @@ data = list(N = 297, mu0=20, T=0.01, S = 1/27, X = c(20.9, 13.6, 15.7, 6.3, 2.7,
 Data for this analysis is presented in JAGS list format below. Copy and paste the text into your script:
 
 ### Activity Task 1
-Run the unknown mean/fixed variance model to estimate mean tree diameter. Include the following in your report:
 
 ```{r}
 
+#initial values for mu 
 inits <- list()
 inits[[1]] <- list(mu = 15)
 inits[[2]] <- list(mu = 20)
 inits[[3]] <- list(mu = 25)
 
+## call jags model to establish connection with jags, compile the model and run through
 j.model   <- jags.model (file = textConnection(NormalMeanN),
                              data = data,
                              inits = inits,
                              n.chains = 3)
 
+## once the model is compiled then coda samples is called to sample from the posterior
 jags.out   <- coda.samples (model = j.model,
                             variable.names = c("mu"),
                                 n.iter = 1000)
 
-jags.out2 <- coda.samples(j.model,variable.names = c("mu"),10000)
-
+## visual assessment of the output
 plot(jags.out)
+
+## additional samples
+jags.out2 <- coda.samples(j.model,variable.names = c("mu"),10000)
 plot(jags.out2)
 
+## compares the among chain variance to the within change variance 
+gelman.diag(jags.out)
 gelman.diag(jags.out2)
 
-GBR <- gelman.plot(jags.out2)
+## determine when convergence happened is done both visually and by plotting the GBR statistic versus sample
+GBR <- gelman.plot(jags.out)
 
 ## determine the first iteration after convergence
 burnin <- GBR$last.iter[tail(which(GBR$shrink[,,2] > 1.1),1)+1]
@@ -327,13 +334,20 @@ effectiveSize(jags.burn)
 cumuplot(jags.out,probs=c(0.025,0.25,0.5,0.75,0.975))
 ```
 
-
+Run the unknown mean/fixed variance model to estimate mean tree diameter. Include the following in your report:
 
 * Table of summary statistics for the posterior estimate of the mean
-* Graph of parameter density
-* Plot of MCMC “history”
+* Graph of parameter density and plot of MCMC “history”
+
+I know the model has converged because the chains have overlapping trajectories and bounce around at random, showing longer term trends. The trajectories of the chains are consistent over time and that their distribution looks appropriately normal.
+
 * Length of your MCMC (i.e. the total number of “updates”), the number of chains, the burnin values you used, the effective sample size, and any graphs/statistics/rationale you used to justify those settings
-# I made one update including many more iterations which improved the appearance of the trace and density plots 
+
+I made one update including many more iterations (10,000 as opposed to 1,000), which improved the appearance of the trace and density plots. With fewer samples there was a trend in the trace plot and the normal distribution wasn't as tight as it is with more samples. However, the GBR for both is 1 showing that the model has converged. So I will perform the rest of the analysis on the smaller sample.  
+
+
+
+
 
 
 ### Activity Task 2
