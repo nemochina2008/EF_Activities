@@ -159,13 +159,11 @@ jags.out.monthly   <- coda.samples (model = j.model.monthly,
 
 * Generate a time-series plot for the CI of x that includes the observations (as above). Use a different color and symbol to differentiate observations that were included in the model versus those that were converted to NA's.
 
-FIX the confidence interval in the case of y.monthly - wider!!
-
 
 ```{r}
 
 out.monthly <- as.matrix(jags.out.monthly)
-ci.monthly <- apply(exp(out[,3:ncol(out.monthly)]),2,quantile,c(0.025,0.5,0.975))
+ci.monthly <- apply(exp(out.monthly[,3:ncol(out.monthly)]),2,quantile,c(0.025,0.5,0.975))
 
 plot(time,ci.monthly[2,],type='n',ylim=range(y.monthly,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng])
 ## adjust x-axis label to be monthly if zoomed
@@ -177,12 +175,12 @@ points(time,y.monthly,pch="+",cex=0.5)
 ```
 
 ```{r}
-plot(time,ci[2,],type='n',ylim=range(y,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng])
+plot(time,ci.monthly[2,],type='n',ylim=range(y,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng])
 ## adjust x-axis label to be monthly if zoomed
 if(diff(time.rng) < 100){ 
   axis.Date(1, at=seq(time[time.rng[1]],time[time.rng[2]],by='month'), format = "%Y-%m")
 }
-ciEnvelope(time,ci[1,],ci[3,],col="lightBlue")
+ciEnvelope(time,ci.monthly[1,],ci.monthly[3,],col="lightBlue")
 points(time,y,pch=ifelse(!is.na(y.monthly), "+", "-"),cex=0.75, col=ifelse(!is.na(y.monthly), "red", "black"))
 
 ```
@@ -195,9 +193,9 @@ plot(time,ci[2,],type='n',ylim=range(y,na.rm=TRUE),ylab="Flu Index",log='y',xlim
 if(diff(time.rng) < 100){ 
   axis.Date(1, at=seq(time[time.rng[1]],time[time.rng[2]],by='month'), format = "%Y-%m")
 }
-ciEnvelope(time,ci[1,],ci[3,],col="lightBlue")
 ciEnvelope(time,ci.monthly[1,],ci.monthly[3,],col="pink")
-points(time,y,pch="+",cex=0.5)
+ciEnvelope(time,ci[1,],ci[3,],col="lightBlue")
+points(time,y,pch=ifelse(!is.na(y.monthly), "+", "-"),cex=0.75, col=ifelse(!is.na(y.monthly), "red", "black"))
 
 ```
 
@@ -268,7 +266,7 @@ jags.out.rm40  <- coda.samples (model = j.model.rm40,
 ```{r}
 
 out.rm40 <- as.matrix(jags.out.rm40)
-ci.rm40 <- apply(exp(out[,3:ncol(out.rm40)]),2,quantile,c(0.025,0.5,0.975))
+ci.rm40 <- apply(exp(out.rm40[,3:ncol(out.rm40)]),2,quantile,c(0.025,0.5,0.975))
 
 plot(time,ci.rm40[2,],type='n',ylim=range(y.rm40,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng])
 ## adjust x-axis label to be monthly if zoomed
@@ -276,6 +274,20 @@ if(diff(time.rng) < 100){
   axis.Date(1, at=seq(time[time.rng[1]],time[time.rng[2]],by='month'), format = "%Y-%m")
 }
 ciEnvelope(time,ci.rm40[1,],ci.rm40[3,],col="lightBlue")
+points(time,y.rm40,pch="+",cex=0.5)
+```
+
+
+```{r}
+s <- 541:620   
+time.rng.s = c(541,620) ## adjust to zoom in and out
+
+plot(time[s],ci.rm40[2,s],type='n',ylim=range(y.rm40[s],na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng.s], xaxt='n')
+## adjust x-axis label to be monthly if zoomed
+if(diff(time.rng.s) < 100){ 
+  axis.Date(1, at=seq(time[time.rng.s[1]],time[time.rng.s[2]],by='month'), format = "%Y-%m")
+}
+ciEnvelope(time[s],ci.rm40[1,s],ci.rm40[3,s],col="lightBlue")
 points(time,y.rm40,pch="+",cex=0.5)
 ```
 
