@@ -282,13 +282,15 @@ points(time,y.rm40,pch="+",cex=0.5)
 s <- 541:620   
 time.rng.s = c(541,620) ## adjust to zoom in and out
 
-plot(time[s],ci.rm40[2,s],type='n',ylim=range(y.rm40[s],na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng.s], xaxt='n')
+plot(time[s],ci.rm40[2,s],type='n',ylim=range(y.rm40,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng.s], xaxt='n')
 ## adjust x-axis label to be monthly if zoomed
 if(diff(time.rng.s) < 100){ 
   axis.Date(1, at=seq(time[time.rng.s[1]],time[time.rng.s[2]],by='month'), format = "%Y-%m")
 }
 ciEnvelope(time[s],ci.rm40[1,s],ci.rm40[3,s],col="lightBlue")
-points(time,y.rm40,pch="+",cex=0.5)
+points(time,y,pch=ifelse(!is.na(y.rm40), "+", "-"),cex=0.75, col=ifelse(!is.na(y.rm40), "red", "black"))
+
+
 ```
 
 
