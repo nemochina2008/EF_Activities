@@ -165,30 +165,35 @@ jags.out.monthly   <- coda.samples (model = j.model.monthly,
 out.monthly <- as.matrix(jags.out.monthly)
 ci.monthly <- apply(exp(out.monthly[,3:ncol(out.monthly)]),2,quantile,c(0.025,0.5,0.975))
 
-plot(time,ci.monthly[2,],type='n',ylim=range(y.monthly,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng])
+plot(time,ci.monthly[2,],type='n',ylim=range(y.monthly,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng], main="Flu monthly")
 ## adjust x-axis label to be monthly if zoomed
 if(diff(time.rng) < 100){ 
   axis.Date(1, at=seq(time[time.rng[1]],time[time.rng[2]],by='month'), format = "%Y-%m")
 }
 ciEnvelope(time,ci.monthly[1,],ci.monthly[3,],col="lightBlue")
 points(time,y.monthly,pch="+",cex=0.5)
+
 ```
 
 ```{r}
-plot(time,ci.monthly[2,],type='n',ylim=range(y,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng])
+plot(time,ci.monthly[2,],type='n',ylim=range(y,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng], main="Flu monthly")
 ## adjust x-axis label to be monthly if zoomed
 if(diff(time.rng) < 100){ 
   axis.Date(1, at=seq(time[time.rng[1]],time[time.rng[2]],by='month'), format = "%Y-%m")
 }
 ciEnvelope(time,ci.monthly[1,],ci.monthly[3,],col="lightBlue")
 points(time,y,pch=ifelse(!is.na(y.monthly), "+", "-"),cex=0.75, col=ifelse(!is.na(y.monthly), "red", "black"))
+legend("topleft", legend=c("Inlcuded", "NA"),pch=c("+", "-"), col=c("red", "black") )
 
 ```
 
 * Compare the CI between the two runs.
 
+The CI is much wider when there are so many NA values in the dataset. The sparser dataset has a wider confidence interval. The pink CI is the one plotted using monthly flu data and the tighter blue one is when we have weekly flu data. 
+
+
 ```{r}
-plot(time,ci[2,],type='n',ylim=range(y,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng])
+plot(time,ci[2,],type='n',ylim=range(y,na.rm=TRUE),ylab="Flu Index",log='y',xlim=time[time.rng], , main="Flu monthly")
 ## adjust x-axis label to be monthly if zoomed
 if(diff(time.rng) < 100){ 
   axis.Date(1, at=seq(time[time.rng[1]],time[time.rng[2]],by='month'), format = "%Y-%m")
@@ -196,22 +201,33 @@ if(diff(time.rng) < 100){
 ciEnvelope(time,ci.monthly[1,],ci.monthly[3,],col="pink")
 ciEnvelope(time,ci[1,],ci[3,],col="lightBlue")
 points(time,y,pch=ifelse(!is.na(y.monthly), "+", "-"),cex=0.75, col=ifelse(!is.na(y.monthly), "red", "black"))
+legend("topleft", legend=c("Inlcuded", "NA"),pch=c("+", "-"), col=c("red", "black") )
 
 ```
 
 
 * Generate a predicted (median) vs observed plot for the data points that were removed
+* Comment on the accuracy and precision of the estimates.
+
+When we use the full weekly flu dataset (observed) to make the prediction, the agreement between the observed and predicted is very good. The points are clustered close to best fit line. However, when we use the monthly flu dataset (observed) to make the prediction, the agreement between the observed and predicted is less strong and the points are more scattered. This is because when we take some of the data out and try to predict on the rest, the model performs less well than we ask it to predict given the full data. The model is good at fitting to the data but performs less well when we ask it to predict on data points it hasn't seen before. Precision is a measure of how spread the data is around the mean. In the case of monthly flu data the points are much more scattered reflecting lower precision. The accuracy of the prediction is also lower in te case of sparse observations; the model didn't acurately capture the range of observed values. Overall, the mean predicted values are lower than the observed values. In the case of the full dataset there is a strong correlation between the model's prediction and the observations (R2=0.9983) and the standard error is much lower. 
+
 
 ```{r}
-plot(y, ci[2,], xlab="Observed", ylab="Predicted")
+plot(ci[2,], y,   xlab="Predicted", ylab="Observed", pch=20, xlim=range(y,na.rm=TRUE))
+lmfit <- lm(y~ci[2,])
+abline(lmfit, col="red")
 abline(0,1, col="blue", lwd=1.5, lty=2)
+summary(lmfit)
 
-plot(y, ci.monthly[2,], xlab="Observed", ylab="Predicted")
+
+plot(ci.monthly[2,], y,  xlab="Predicted", ylab="Observed", pch=20, xlim=range(y,na.rm=TRUE))
+lmfit_m <- lm(y~ci.monthly[2,])
+abline(lmfit_m, col="red")
 abline(0,1, col="blue", lwd=1.5, lty=2)
+summary(lmfit_m)
 
 ```
 
-* Comment on the accuracy and precision of the estimates.
 
 Extra Credit:
 -------------
@@ -289,11 +305,24 @@ if(diff(time.rng.s) < 100){
 }
 ciEnvelope(time[s],ci.rm40[1,s],ci.rm40[3,s],col="lightBlue")
 points(time,y,pch=ifelse(!is.na(y.rm40), "+", "-"),cex=0.75, col=ifelse(!is.na(y.rm40), "red", "black"))
+legend("topleft", legend=c("Inlcuded", "NA"),pch=c("+", "-"), col=c("red", "black") )
 
+```
+
+* Comment on how well the random walk model performed (both accuracy and precision) and how it might be modified to improve both these criteria.
+
+Random walk performed decently both in terms of accuracy and precision. Random walk is a useful null model to compare more complex process models to. However, it is an oversimplification assuming that each time step is distributed around the previous time step with some process error. It cannot represent more dynamic processes, statistial complexity, meachnistic nonlinear relationships etc. If we don't trust our data and we know it's sparse, then we can put a higher weight on the prior as opposed to the data to improve our precision. 
+
+
+
+```{r}
+plot(ci.rm40[2,], y,   xlab="Predicted", ylab="Observed", pch=20, xlim=range(y,na.rm=TRUE))
+lmfit.r <- lm(y~ci.rm40[2,])
+abline(lmfit.r, col="red")
+abline(0,1, col="blue", lwd=1.5, lty=2)
+summary(lmfit.r)
 
 ```
 
 
 
-
-* Comment on how well the random walk model performed (both accuracy and precision) and how it might be modified to improve both these criteria.
