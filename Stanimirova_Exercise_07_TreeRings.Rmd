@@ -164,7 +164,7 @@ model{
   
   #### Data Model: DBH
   for(t in 1:nt){
-    z[i,t] ~ dnorm(x[i,t],tau_dbh)
+    z[i,t] ~ dnorm(x[i,t],tau_dbh)  
   }
   
   #### Data Model: growth
@@ -193,7 +193,7 @@ model{
   
   
   #### Priors
-  tau_dbh ~ dgamma(a_dbh,r_dbh)
+  tau_dbh ~ dgamma(a_dbh,r_dbh) #prior on the uncertainty in the dbh - prior on precision 
   tau_inc ~ dgamma(a_inc,r_inc)
   tau_add ~ dgamma(a_add,r_add)
   tau_ind ~ dgamma(1,0.1)
