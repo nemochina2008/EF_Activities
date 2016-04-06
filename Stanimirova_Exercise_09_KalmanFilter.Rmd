@@ -187,6 +187,9 @@ The assignment is to run the KF under all four combinations of covariance in the
 
 **Rerun with process error set to just the diagonal matrix of Q, compare the results with the original**
 
+Q is the process error covariance matrix. In the first case we use the full covariance matrix and in the second case we use the diagonal of the covariance matrix, assuming 0 covariance off-diagonal. With diagonal covariance matrix, the confidence interval balloons more from 2004 to 2005 for the states where we have missing data for. The confidence interval doesn't follow the shape of the data as closely. This is because we assume that the process error for each state is independent and as a result the CI in one state is not informed by the data in other states. 
+
+
 
 ```{r}
 ## options for process error covariance
@@ -220,6 +223,8 @@ for(i in 1:6){
 ```
 
 **Rerun with alpha = 0.05 and the diagonal Q matrix**
+When we use higher alpha, high spatial flux, then the confidence intervals are tighter than the original. This is because we assume that flu incidence in one state will have an effect on flu incidence in current state due to high flux. As a result the model prediction is better constrained because we can use data in one state to inform prediction in another even when data is missing. 
+
 
 ```{r}
 ## options for process error covariance
@@ -257,6 +262,8 @@ for(i in 1:6){
 ```
 
 **Rerun with alpha = 0.05 and the original Q matrix**
+The CI intervals in this case are also tighter than the original run. They are similar to the run where we used high alpha and diagonal Q.
+
 
 ```{r}
 ## options for process error covariance
@@ -275,9 +282,9 @@ nt = length(time)
 ### plot ANALYSIS mean & CI time-series
 par(mfrow=c(3,1))
 for(i in 1:6){
-  ci = rbind(mu.a[i,]-1.96*sqrt(P.a[i,i,]),mu.a[i,]+1.96*sqrt(P.a[i,i,]))
-  plot(time,mu.a[i,],ylim=range(ci,na.rm=TRUE),type='n',main=states[i])
-  ciEnvelope(time,ci[1,],ci[2,],col="lightBlue")
+  ci.10 = rbind(mu.a[i,]-1.96*sqrt(P.a[i,i,]),mu.a[i,]+1.96*sqrt(P.a[i,i,]))
+  plot(time,mu.a[i,],ylim=range(ci.10,na.rm=TRUE),type='n',main=states[i])
+  ciEnvelope(time,ci.10[1,],ci.10[2,],col="lightBlue")
   lines(time,mu.a[i,],col=4)
   lines(time,Y[i,])
 }
@@ -294,3 +301,5 @@ for(i in 1:6){
 ```
 
 * Explain conceptually what would have to change in the Kalman Filter function if we replaced the current linear model with a nonlinear process model, in order to turn it into an Extended Kalman Filter function.
+
+The Kalman Filter is like a state-space model that's linear and where observation errors are normally distributed. This limits its applications. In the Extended Kalman Filter the linearity limitation in the process model is relaxed. EKF allows for the process model to take on a nonlinear function. The analysis step will stay the same as a Kalman Filter but the forecasting step will use the full model. The variance in EKF is approximated with a linear model using Taylor Series approach because variance cannot be updated using a nonlinear model. As a result EFK forecast happens in the following steps: 1) use current mean to get specific numerical values for M and 2) update the forecast mean and variance.  
