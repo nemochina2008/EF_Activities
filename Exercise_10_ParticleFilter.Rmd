@@ -125,8 +125,8 @@ litter = c(71,94)*0.01*3 ##gC/m2/yr->Mg/ha/yr
 timestep = 1800 #seconds
 params = list()
 
-Ra = 0.75
-alloc = matrix(c(Ra,(1-0.315)*Ra,0.315*Ra),1) # prior mean on allocation
+Ra = 0.5
+alloc = matrix(c(Ra,(1-0.315)*(1-Ra),0.315*(1-Ra)),1) # prior mean on allocation
 Neff = matrix(rpois(ne,100),ne) 
 params$falloc = rdirichlet(ne,Neff%*%alloc)  ## Ra, wood, leaf
 
@@ -184,10 +184,12 @@ output[is.nan(output)] = 0
 output[is.infinite(output)] = 0
 
 ## average the output to daily
+library(iotools)
 bin = 86400/timestep
 out.daily = array(0.0,c(ceiling(nt/bin),ne,12))
 for(i in 1:12){
-  out.daily[,,i] <- apply(output[,,i],2,function(x){tapply(x,rep(1:365,each=bin)[1:nt],mean)})
+  print(i)
+  out.daily[,,i] <- apply(output[,,i],2, ctapply, rep(1:365,each=bin)[1:nt], mean)
 }
 
 ## Basic time-series visualizations
